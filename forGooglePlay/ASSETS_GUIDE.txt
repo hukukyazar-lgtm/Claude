@@ -1,0 +1,23 @@
+GOOGLE PLAY STORE GÖRSEL VARLIK REHBERİ (2026)
+
+Bu klasör, oyununuzu Google Play Store'da yayınlarken kullanacağınız görseller için ayrılmıştır. 
+
+İHTİYAÇ DUYULAN VARLIKLAR:
+
+1. app_icon.png (512x512)
+   - Oyun logonuz. 'eva.ist' markasını içermeli.
+   
+2. feature_graphic.png (1024x500)
+   - Mağaza vitrin görseli. Portal temasını yansıtmalı.
+
+3. screenshot_1.png (9:16 - Dikey)
+   - Kelime Geçidi (Word Puzzle) ekranı.
+
+4. screenshot_2.png (9:16 - Dikey)
+   - Hafıza Geçidi (Memory Game) ekranı.
+
+5. screenshot_3.png (9:16 - Dikey)
+   - Ana Üs (Hub) veya Galaksi görünümü.
+
+NOT: Görselleri hazırlarken sRGB renk profilini kullanmanız ve metinleri merkeze odaklamanız önerilir.
+ AI Jeneratör kotası nedeniyle görseller şu an otomatik oluşturulamadı, ancak bu rehberdeki boyutlara göre hazırlayıp buraya yükleyebilirsiniz.

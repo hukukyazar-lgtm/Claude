@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "UserStats": {
+      "title": "User Stats",
+      "description": "Statistics and progress for a user",
+      "type": "object",
+      "properties": {
+        "level": { "type": "integer" },
+        "coins": { "type": "integer" },
+        "stars": { "type": "integer" },
+        "hearts": { "type": "integer" },
+        "hintsFreeze": { "type": "integer" },
+        "hintsReveal": { "type": "integer" },
+        "difficultyFactor": { "type": "number" },
+        "updatedAt": { "type": "integer" }
+      },
+      "required": ["level", "coins", "stars", "hearts"]
+    },
+    "LeaderboardEntry": {
+      "title": "Leaderboard Entry",
+      "description": "Entry in the global leaderboard",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "score": { "type": "integer" },
+        "photo": { "type": "string" },
+        "level": { "type": "integer" },
+        "updatedAt": { "type": "integer" }
+      },
+      "required": ["name", "score", "level"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserStats",
+      "description": "User progress data"
+    },
+    "/leaderboard/{userId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Leaderboard score data"
+    }
+  }
+}
