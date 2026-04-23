@@ -540,42 +540,4 @@ export class SoundManager {
     osc.start(now);
     osc.stop(now + 0.3);
   }
-
-  /**
-   * Derin ve gürültülü 'Ateş' sesi (Heart Burn için)
-   */
-  public playFire() {
-    if (!this.ctx || !this.globalFilter || !this.soundEnabled || this.isMuted) return;
-    this.resume();
-
-    const now = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 1.5;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-
-    // Beyaz gürültü bazlı alev sesi
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, now);
-    filter.frequency.exponentialRampToValueAtTime(100, now + 1.2);
-
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.6, now + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.globalFilter);
-
-    noise.start(now);
-    noise.stop(now + 1.5);
-  }
 }

@@ -13,7 +13,7 @@ import { Portal3D } from '../components/Portal3D';
 import { fetchQuestions } from '../lib/supabase';
 import { usePlanets } from '../PlanetProvider';
 import { useTheme } from '../ThemeProvider';
-import { Eye, Flame } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 type RingStyle = 
   | 'STANDART' | 'BALERİN' | 'DÖNMEDOLAP' | 'ATLIKARINCA' | 'DEĞİRMEN'
@@ -88,7 +88,6 @@ export const WordPuzzle: React.FC<{
 
   const COLORS = palette;
   const dynamicRoundTime = useMemo(() => BASE_ROUND_TIME / stats.difficultyFactor, [stats.difficultyFactor]);
-  const isLastHeart = stats.hearts === 1;
 
   const [questions, setQuestions] = useState<{ 
     target: string; 
@@ -289,44 +288,6 @@ export const WordPuzzle: React.FC<{
     }, 3000);
   };
 
-  const useHeartBurn = () => {
-    if (stats.hearts <= 1 || selectedChoice || isTransitioning) return;
-    
-    onUpdateStats({ hearts: stats.hearts - 1 });
-    SoundManager.getInstance().playFire();
-    
-    const points = 50; // Minimal points for skip
-    setChoiceStatus('success');
-    setLastPoints(points);
-    setShowPoints(true);
-    setTimeout(() => setShowPoints(false), 1500);
-    
-    const nextResults = [...roundResults];
-    nextResults[currentRound] = 'success';
-    setSessionScore(prev => prev + points);
-    
-    setTimeout(() => {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        if (currentRound === puzzleRounds.length - 1) {
-          const allTargets = puzzleRounds.map(r => r.target);
-          const allDistractors = puzzleRounds.flatMap(r => r.distractors);
-          onComplete(sessionScore + points, allTargets, allDistractors);
-        } else {
-          setCurrentRound(prev => prev + 1);
-          setTimeLeft(MEMORIZE_DURATION);
-          setGamePhase('MEMORIZE');
-          setChoiceStatus('idle');
-          setSelectedChoice(null);
-          setRevealedIndex(-1);
-          setRoundResults(nextResults);
-          setIsTransitioning(false);
-          setIsPeekPhase(true);
-        }
-      }, 400);
-    }, 1000);
-  };
-
   const handleChoice = (choice: string) => {
     if (selectedChoice || choiceStatus !== 'idle' || isTransitioning || !activeRoundData) return;
     
@@ -505,7 +466,7 @@ export const WordPuzzle: React.FC<{
   }
 
   return (
-    <div className={`absolute inset-0 bg-transparent flex flex-col overflow-hidden transition-all duration-1000 ${isLastHeart ? 'shadow-[inset_0_0_150px_rgba(239,68,68,0.4)] ring-[16px] ring-red-500/20' : ''}`}>
+    <div className={`absolute inset-0 bg-transparent flex flex-col overflow-hidden transition-all duration-1000`}>
       <ParticleBackground 
         speedMultiplier={choiceStatus === 'success' ? 0.05 : 0.25 * stats.difficultyFactor} 
         themeColor={COLORS[currentRound % COLORS.length]} 
@@ -565,40 +526,10 @@ export const WordPuzzle: React.FC<{
         <div className="text-3xl font-bold text-white tracking-widest opacity-90">{(sessionScore || 0).toLocaleString()}</div>
       </div>
 
-      {isLastHeart && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30">
-          <motion.div 
-             animate={{ opacity: [0.4, 1, 0.4] }}
-             transition={{ duration: 2, repeat: Infinity }}
-             className="bg-red-500/20 backdrop-blur-xl border border-red-500/40 px-6 py-1.5 rounded-full"
-          >
-             <span className="text-[10px] font-black text-red-400 tracking-[0.3em] uppercase italic">ADRENALİN MODU: 2X ÖDÜL</span>
-          </motion.div>
-        </div>
-      )}
-
       <div className={`flex-1 relative flex items-center justify-center perspective-[1200px] z-10 min-h-0 transition-all duration-500 ${isMenuOpen ? 'blur-sm brightness-50' : ''}`}>{renderRing()}</div>
 
       {!isTransitioning && !isPeekPhase && (
         <div className="fixed right-4 bottom-36 z-[300] flex flex-col gap-4 animate-[popIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)]">
-          {/* Can Yakma (Heart Burn) */}
-          {stats.hearts > 1 && (
-            <motion.button 
-              onClick={useHeartBurn}
-              animate={{ x: [0, 2, 0, -2, 0] }}
-              transition={{ duration: 0.2, repeat: Infinity, repeatType: "reverse" }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="group relative w-16 h-16 flex items-center justify-center"
-            >
-              <div className="absolute inset-0 bg-red-600/30 blur-2xl rounded-full scale-125" />
-              <div className="relative w-full h-full bg-gradient-to-t from-red-700 to-orange-500 rounded-full flex flex-col items-center justify-center shadow-xl border border-white/20">
-                 <Flame className="w-5 h-5 text-white animate-pulse" />
-                 <span className="text-[6px] font-[1000] text-white tracking-tighter uppercase text-center leading-none mt-0.5">CAN YAK</span>
-              </div>
-            </motion.button>
-          )}
-
           <motion.button 
             onClick={useHint} 
             disabled={stats.hintsFreeze <= 0}

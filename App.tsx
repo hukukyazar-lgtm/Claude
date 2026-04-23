@@ -9,7 +9,6 @@ import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { LevelFailModal } from './components/LevelFailModal';
 import { ChestModal } from './components/ChestModal';
 import { MemoryTransitionModal } from './components/MemoryTransitionModal';
-import { VisualTutorial } from './components/VisualTutorial';
 import { LevelTransition } from './components/LevelTransition';
 import { SplashScreen } from './components/SplashScreen';
 import { RankUpNotification } from './components/RankUpNotification';
@@ -60,10 +59,6 @@ const AppMain: React.FC<AppMainProps> = ({ stats, sync, flow, economy, missions,
       case GameState.SPLASH: return <SplashScreen onFinished={() => flow.changeGameState(GameState.LOADING)} />;
       case GameState.LOADING: return <LoadingScreen backgroundUrl={gameData.currentPlanetImage} onFinished={() => flow.changeGameState(GameState.HUB)} />;
       case GameState.HUB: return <HubScreen stats={stats} currentUser={sync.currentUser} isSyncing={sync.isSyncing} hubSubView={ui.hubSubView} setHubSubView={ui.setHubSubView} onStartGame={economy.handleStartGame} onAddCoins={(amt) => economy.updateStats({ coins: stats.coins + amt })} onBuyHearts={(c, a) => economy.handleBuyItem(c, 'HEART', a)} onBuyItem={economy.handleBuyItem} onWatchVideo={economy.handleWatchVideo} onOpenChest={() => ui.setShowChest(true)} onClaimMission={missions.handleClaimMission} levelStars={stats.levelStars} settings={settings.settings} onUpdateSettings={settings.onUpdateSettings} onOpenPrivacy={() => privacy.setShowPrivacy(true)} />;
-      case GameState.TUTORIAL: return <VisualTutorial onComplete={() => {
-        localStorage.setItem('eva_tutorial_seen', 'true');
-        flow.changeGameState(GameState.WORD_PUZZLE);
-      }} />;
       case GameState.WORD_PUZZLE: return <WordPuzzle stats={stats} level={level} questions={gameData.questions} onComplete={gameData.handlePuzzleComplete} onExit={economy.handleExitWithPenalty} onUpdateStats={economy.updateStats} />;
       case GameState.MEMORY_PREPARE: return (
         <MemoryTransitionModal 

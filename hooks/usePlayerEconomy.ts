@@ -136,17 +136,11 @@ export const usePlayerEconomy = (
     if (stats.hearts > 0) {
       setSessionScore(0);
       setReplayingLevel(levelId || null);
-      
-      const hasSeenTutorial = localStorage.getItem('eva_tutorial_seen');
-      if (!hasSeenTutorial && stats.level === 1 && !levelId) {
-        changeGameState(GameState.TUTORIAL);
-      } else {
-        changeGameState(GameState.WORD_PUZZLE);
-      }
+      changeGameState(GameState.WORD_PUZZLE);
     } else {
       setHubSubView(HubSubView.SHOP);
     }
-  }, [stats.hearts, stats.level, setSessionScore, setReplayingLevel, changeGameState, setHubSubView]);
+  }, [stats.hearts, setSessionScore, setReplayingLevel, changeGameState, setHubSubView]);
 
   return {
     stats,
