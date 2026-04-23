@@ -41,28 +41,37 @@ export const VisualTutorial: React.FC<{ onComplete: () => void }> = ({ onComplet
        icon: <Search className="w-8 h-8" />,
        color: "#4ade80",
        demo: (
-         <div className="flex flex-col gap-3 w-48">
-            <motion.div 
-               animate={{ x: [0, 5, 0] }}
-               transition={{ duration: 2, repeat: Infinity }}
-               className="bg-emerald-500/20 border border-emerald-400 p-3 rounded-xl text-center text-xs font-black text-emerald-400"
-            >
-               DOĞRU KELİME
-            </motion.div>
-            <div className="bg-white/5 border border-white/10 p-3 rounded-xl text-center text-xs font-black text-white/40">
-               YANLIŞ KELİME
+         <div className="relative flex flex-col items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none scale-150">
+               <Cube3D size={120} color="#4ade80" speed={15} rotationAxis="TUMBLE" visualStyle="LUMINA" label="AKL" />
             </div>
+            <motion.div 
+               animate={{ y: [0, -5, 0], scale: [1, 1.05, 1] }}
+               transition={{ duration: 2, repeat: Infinity }}
+               className="relative z-10 bg-emerald-500/20 border border-emerald-400/50 py-4 px-8 rounded-2xl shadow-[0_0_30px_rgba(74,222,128,0.2)]"
+            >
+               <span className="text-2xl font-black text-emerald-400 tracking-tighter italic">LUMINA</span>
+            </motion.div>
          </div>
        )
     },
     {
-       title: "EVA.IST DÜNYASI",
-       description: "Gezegenleri keşfet, puanları topla ve liderlik tablosunda yüksel. Macera başlıyor!",
+       title: "LUMINA DÜNYASI",
+       description: "İlk gezegenden başlayıp gizemli Lumina'ya kadar uzanan destansı bir yolculuk. Tüm kapıları aç ve zirveye ulaş!",
        icon: <Sparkles className="w-8 h-8" />,
        color: "#fb923c",
        demo: (
-         <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-rose-600 animate-pulse shadow-[0_0_50px_rgba(249,115,22,0.4)] flex items-center justify-center">
-            <div className="w-24 h-24 rounded-full border-2 border-white/20 border-dashed animate-spin" />
+         <div className="relative w-48 h-20 flex items-center justify-center">
+            <div className="absolute w-full h-[1px] bg-gradient-to-r from-transparent via-orange-400/50 to-transparent" />
+            <motion.div 
+               animate={{ x: [-80, 80] }}
+               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+               className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-rose-600 shadow-[0_0_40px_rgba(249,115,22,0.5)] flex items-center justify-center z-10"
+            >
+               <div className="w-8 h-8 rounded-full border border-white/20 border-dashed animate-spin" />
+            </motion.div>
+            <div className="absolute left-0 w-4 h-4 rounded-full bg-white/20 blur-sm" />
+            <div className="absolute right-0 w-6 h-6 rounded-full bg-orange-400/40 blur-md animate-pulse" />
          </div>
        )
     }
