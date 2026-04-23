@@ -35,24 +35,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            {/* Producer Name */}
             <div className="text-center space-y-4">
-              <motion.div 
-                initial={{ opacity: 0, letterSpacing: '0.2em' }}
-                animate={{ opacity: 1, letterSpacing: '0.8em' }}
-                transition={{ delay: 0.2, duration: 1 }}
-                className="text-cyan-400 font-bold text-[10px] uppercase italic tracking-[0.8em]"
-              >
-                YAPIMCI
-              </motion.div>
-              
               <motion.h1 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
                 className="text-white text-7xl font-[1000] tracking-tighter italic uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
               >
-                 eva.ist
+                 LUMINA
               </motion.h1>
 
               <motion.div 

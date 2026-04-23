@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { UserStats } from "../types";
 
 import firebaseConfig from "../firebase-applet-config.json";
@@ -9,6 +10,9 @@ import firebaseConfig from "../firebase-applet-config.json";
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const functions = getFunctions(app);
+
+export const secureSyncStats = httpsCallable(functions, 'validateAndSyncStats');
 
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();

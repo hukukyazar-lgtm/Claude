@@ -42,8 +42,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ level, stats: userSt
     // Rütbe her sistemde (6 seviyede) bir değişir
     const sys = Math.ceil(lvl / 6);
     const titleIdx = sys - 1;
-    const titles = ["GÖZLEMCİ", "KAYITÇI", "ANIMSATICI", "ARŞİVCİ", "MUHAFIZ", "ODAKLAYICI", "KODLAYICI", "GERİÇAĞIRICI", "SIR-KÂŞİFİ", "MUTLAK BELLEK"];
-    const colors = [palette[0], palette[1] || palette[0], palette[2] || palette[0], palette[3] || palette[0], palette[4] || palette[0], "#6366f1", "#f472b6", "#d946ef", "#fbbf24", "#ffffff"];
+    const titles = ["SEYYAH", "KAŞIF", "YILDIZ TOZU", "NEBULA", "GEZEGEN", "YILDIZ", "GALAKSİ", "EVREN", "KOZMİK TANRI", "SONSUZLUK"];
+    const colors = ["#94a3b8", "#64748b", "#22d3ee", "#06b6d4", "#818cf8", "#6366f1", "#f472b6", "#d946ef", "#fbbf24", "#ffffff"];
     
     const currentIdx = titleIdx % titles.length;
     const nextIdx = (titleIdx + 1) % titles.length;

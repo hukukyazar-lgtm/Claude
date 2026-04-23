@@ -144,7 +144,7 @@ export const RankingModal: React.FC<RankingModalProps> = ({ onClose, stats, curr
   const getRankTitle = (lvl: number) => {
     const sys = Math.ceil(lvl / 6);
     const titleIdx = sys - 1;
-    const titles = ["GÖZLEMCİ", "KAYITÇI", "ANIMSATICI", "ARŞİVCİ", "MUHAFIZ", "ODAKLAYICI", "KODLAYICI", "GERİÇAĞIRICI", "SIR-KÂŞİFİ", "MUTLAK BELLEK"];
+    const titles = ["SEYYAH", "KAŞIF", "YILDIZ TOZU", "NEBULA", "GEZEGEN", "YILDIZ", "GALAKSİ", "EVREN", "KOZMİK TANRI", "SONSUZLUK"];
     
     const currentIdx = titleIdx % titles.length;
     const tier = Math.floor(titleIdx / titles.length) + 1;

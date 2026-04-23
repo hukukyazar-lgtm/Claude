@@ -44,3 +44,24 @@ export interface UserStats {
   maxStreak: number; // Rekor doğru cevap serisi
   levelStars: Record<number, number>; // Level ID -> Star count (1-3)
 }
+
+export interface Question {
+  target: string;
+  distractors: string[];
+  language: string;
+  planetId: number;
+  planetName: string;
+  quesId: number;
+  difficulty: number;
+  planetImage: string;
+}
+
+export interface LeaderboardRankData {
+  newRank: number;
+  oldRank: number | null;
+}
+
+export interface RankUpData {
+  title: string;
+  color: string;
+}
