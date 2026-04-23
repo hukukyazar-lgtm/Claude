@@ -35,21 +35,26 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            <div className="text-center space-y-4">
-              <motion.h1 
+            <div className="text-center">
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="text-white text-7xl font-[1000] tracking-tighter italic uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                className="flex flex-col items-center"
               >
-                 LUMINA
-              </motion.h1>
+                <h1 className="text-white text-7xl font-[1000] tracking-tighter italic uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] leading-none">
+                   EVA.IST
+                </h1>
+                <span className="text-white/60 text-lg font-bold tracking-[0.4em] italic mt-1">
+                   DIGITAL PRODUCTION
+                </span>
+              </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 transition={{ delay: 0.8, duration: 1 }}
-                className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mt-6"
               />
             </div>
           </motion.div>

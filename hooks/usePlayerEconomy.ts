@@ -19,7 +19,8 @@ const DEFAULT_STATS: UserStats = {
   performanceHistory: [],
   streak: 0,
   maxStreak: 0,
-  levelStars: {}
+  levelStars: {},
+  activeRisk: 0
 };
 
 export const usePlayerEconomy = (
@@ -36,7 +37,8 @@ export const usePlayerEconomy = (
         const parsed = JSON.parse(saved);
         return {
           ...parsed,
-          levelStars: parsed.levelStars || {}
+          levelStars: parsed.levelStars || {},
+          activeRisk: 0 // Her oturumda sıfırla
         };
       } catch (e) {
         console.error("Failed to parse saved stats:", e);
@@ -46,8 +48,22 @@ export const usePlayerEconomy = (
   });
 
   const updateStats = useCallback((updates: Partial<UserStats>) => {
-    setStats(prev => ({ ...prev, ...updates }));
+    setStats(prev => {
+      const newState = { ...prev, ...updates };
+      // LocalStorage sync
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    });
   }, []);
+
+  const handleApplyRisk = useCallback((amount: number) => {
+    if (stats.coins < amount) return false;
+    updateStats({ 
+      coins: stats.coins - amount,
+      activeRisk: amount 
+    });
+    return true;
+  }, [stats.coins, updateStats]);
 
   /**
    * HEART REFILL LOGIC
@@ -120,11 +136,17 @@ export const usePlayerEconomy = (
     if (stats.hearts > 0) {
       setSessionScore(0);
       setReplayingLevel(levelId || null);
-      changeGameState(GameState.WORD_PUZZLE);
+      
+      const hasSeenTutorial = localStorage.getItem('eva_tutorial_seen');
+      if (!hasSeenTutorial && stats.level === 1 && !levelId) {
+        changeGameState(GameState.TUTORIAL);
+      } else {
+        changeGameState(GameState.WORD_PUZZLE);
+      }
     } else {
       setHubSubView(HubSubView.SHOP);
     }
-  }, [stats.hearts, setSessionScore, setReplayingLevel, changeGameState, setHubSubView]);
+  }, [stats.hearts, stats.level, setSessionScore, setReplayingLevel, changeGameState, setHubSubView]);
 
   return {
     stats,
@@ -135,6 +157,7 @@ export const usePlayerEconomy = (
     handleWatchVideo,
     handleLevelFail,
     handleExitWithPenalty,
-    handleStartGame
+    handleStartGame,
+    handleApplyRisk
   };
 };

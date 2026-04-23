@@ -13,7 +13,7 @@ import { Portal3D } from '../components/Portal3D';
 import { fetchQuestions } from '../lib/supabase';
 import { usePlanets } from '../PlanetProvider';
 import { useTheme } from '../ThemeProvider';
-import { Eye } from 'lucide-react';
+import { Eye, Flame } from 'lucide-react';
 
 type RingStyle = 
   | 'STANDART' | 'BALERİN' | 'DÖNMEDOLAP' | 'ATLIKARINCA' | 'DEĞİRMEN'
@@ -88,7 +88,8 @@ export const WordPuzzle: React.FC<{
 
   const COLORS = palette;
   const dynamicRoundTime = useMemo(() => BASE_ROUND_TIME / stats.difficultyFactor, [stats.difficultyFactor]);
-  
+  const isLastHeart = stats.hearts === 1;
+
   const [questions, setQuestions] = useState<{ 
     target: string; 
     distractors: string[];
@@ -288,50 +289,101 @@ export const WordPuzzle: React.FC<{
     }, 3000);
   };
 
+  const useHeartBurn = () => {
+    if (stats.hearts <= 1 || selectedChoice || isTransitioning) return;
+    
+    onUpdateStats({ hearts: stats.hearts - 1 });
+    SoundManager.getInstance().playFire();
+    
+    const points = 50; // Minimal points for skip
+    setChoiceStatus('success');
+    setLastPoints(points);
+    setShowPoints(true);
+    setTimeout(() => setShowPoints(false), 1500);
+    
+    const nextResults = [...roundResults];
+    nextResults[currentRound] = 'success';
+    setSessionScore(prev => prev + points);
+    
+    setTimeout(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        if (currentRound === puzzleRounds.length - 1) {
+          const allTargets = puzzleRounds.map(r => r.target);
+          const allDistractors = puzzleRounds.flatMap(r => r.distractors);
+          onComplete(sessionScore + points, allTargets, allDistractors);
+        } else {
+          setCurrentRound(prev => prev + 1);
+          setTimeLeft(MEMORIZE_DURATION);
+          setGamePhase('MEMORIZE');
+          setChoiceStatus('idle');
+          setSelectedChoice(null);
+          setRevealedIndex(-1);
+          setRoundResults(nextResults);
+          setIsTransitioning(false);
+          setIsPeekPhase(true);
+        }
+      }, 400);
+    }, 1000);
+  };
+
   const handleChoice = (choice: string) => {
     if (selectedChoice || choiceStatus !== 'idle' || isTransitioning || !activeRoundData) return;
     
-    // If clicked during memorize phase, handle the choice immediately
-    if (gamePhase === 'MEMORIZE') {
+    // 1. EŞLEŞME KONTROLÜ - HEMEN YAPILIR (Gecikme öncesi)
+    // Türkçe karakter ve boşluk hassasiyeti için trim ve lowercase kullanıyoruz
+    const targetWord = activeRoundData.target.trim().toLocaleLowerCase('tr-TR');
+    const chosenWord = choice === "TIME_UP" ? "" : choice.trim().toLocaleLowerCase('tr-TR');
+    const isCorrect = choice !== "TIME_UP" && chosenWord === targetWord;
+
+    // Seçimi kilitle
+    setSelectedChoice(choice);
+    setShowHintMenu(false);
+
+    // If clicked during memorize phase, handle the phase shift
+    if (gamePhase === 'MEMORIZE' && choice !== "TIME_UP") {
       setGamePhase('GUESS');
       setTimeLeft(dynamicRoundTime);
     }
 
-    setSelectedChoice(choice);
-    setShowHintMenu(false);
+    // 2. GÖRSEL/İSİTSEL GERİ BİLDİRİM GECİKMESİ
     setTimeout(() => {
-      const isCorrect = choice === activeRoundData.target;
       if (isCorrect) {
         SoundManager.getInstance().playSuccess();
         const nextCombo = comboCount + 1;
         setComboCount(nextCombo);
         
-        // 5. KOMBO VE GÖRSEL ÖDÜL: 5'li seride Supernova efekti
         if (nextCombo >= 5) {
           setShowSupernova(true);
           setTimeout(() => setShowSupernova(false), 2000);
-          SoundManager.getInstance().playSuccess(); // Extra sound for supernova
+          SoundManager.getInstance().playSuccess(); 
         }
       } else {
         if (choice !== "TIME_UP") SoundManager.getInstance().playFail();
         setComboCount(0);
       }
-      const points = Math.floor((100 + timeLeft * 10) * (1 + (comboCount * 0.1)));
+
+      const points = isCorrect 
+        ? Math.floor((100 + timeLeft * 10) * (1 + (comboCount * 0.1)))
+        : -50;
+      
       const nextResults = [...roundResults];
+      nextResults[currentRound] = isCorrect ? 'success' : 'fail';
+      
       setChoiceStatus(isCorrect ? 'success' : 'fail');
-      setLastPoints(isCorrect ? points : -50);
+      setLastPoints(points);
       setShowPoints(true);
       setTimeout(() => setShowPoints(false), 1500);
       
-      nextResults[currentRound] = isCorrect ? 'success' : 'fail';
       const nextScore = isCorrect ? sessionScore + points : Math.max(0, sessionScore - 50);
       setSessionScore(nextScore);
-      const delay = isCorrect ? (activeRoundData.target.length * 150 + 1000) : 1000;
+
+      const nextRoundDelay = isCorrect ? (activeRoundData.target.length * 150 + 1000) : 1200;
+      
       setTimeout(() => {
         setIsTransitioning(true);
         setTimeout(() => {
           if (currentRound === puzzleRounds.length - 1) {
-            // Hafıza oyunu için tüm hedef ve çeldirici kelimeleri gönder
             const allTargets = puzzleRounds.map(r => r.target);
             const allDistractors = puzzleRounds.flatMap(r => r.distractors);
             onComplete(nextScore, allTargets, allDistractors);
@@ -351,7 +403,7 @@ export const WordPuzzle: React.FC<{
             setIsPeekPhase(true);
           }
         }, 400);
-      }, delay);
+      }, nextRoundDelay);
     }, 600); 
   };
 
@@ -453,7 +505,7 @@ export const WordPuzzle: React.FC<{
   }
 
   return (
-    <div className="absolute inset-0 bg-transparent flex flex-col overflow-hidden">
+    <div className={`absolute inset-0 bg-transparent flex flex-col overflow-hidden transition-all duration-1000 ${isLastHeart ? 'shadow-[inset_0_0_150px_rgba(239,68,68,0.4)] ring-[16px] ring-red-500/20' : ''}`}>
       <ParticleBackground 
         speedMultiplier={choiceStatus === 'success' ? 0.05 : 0.25 * stats.difficultyFactor} 
         themeColor={COLORS[currentRound % COLORS.length]} 
@@ -513,10 +565,40 @@ export const WordPuzzle: React.FC<{
         <div className="text-3xl font-bold text-white tracking-widest opacity-90">{(sessionScore || 0).toLocaleString()}</div>
       </div>
 
+      {isLastHeart && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30">
+          <motion.div 
+             animate={{ opacity: [0.4, 1, 0.4] }}
+             transition={{ duration: 2, repeat: Infinity }}
+             className="bg-red-500/20 backdrop-blur-xl border border-red-500/40 px-6 py-1.5 rounded-full"
+          >
+             <span className="text-[10px] font-black text-red-400 tracking-[0.3em] uppercase italic">ADRENALİN MODU: 2X ÖDÜL</span>
+          </motion.div>
+        </div>
+      )}
+
       <div className={`flex-1 relative flex items-center justify-center perspective-[1200px] z-10 min-h-0 transition-all duration-500 ${isMenuOpen ? 'blur-sm brightness-50' : ''}`}>{renderRing()}</div>
 
       {!isTransitioning && !isPeekPhase && (
-        <div className="fixed right-4 bottom-36 z-[300] animate-[popIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)]">
+        <div className="fixed right-4 bottom-36 z-[300] flex flex-col gap-4 animate-[popIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)]">
+          {/* Can Yakma (Heart Burn) */}
+          {stats.hearts > 1 && (
+            <motion.button 
+              onClick={useHeartBurn}
+              animate={{ x: [0, 2, 0, -2, 0] }}
+              transition={{ duration: 0.2, repeat: Infinity, repeatType: "reverse" }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="group relative w-16 h-16 flex items-center justify-center"
+            >
+              <div className="absolute inset-0 bg-red-600/30 blur-2xl rounded-full scale-125" />
+              <div className="relative w-full h-full bg-gradient-to-t from-red-700 to-orange-500 rounded-full flex flex-col items-center justify-center shadow-xl border border-white/20">
+                 <Flame className="w-5 h-5 text-white animate-pulse" />
+                 <span className="text-[6px] font-[1000] text-white tracking-tighter uppercase text-center leading-none mt-0.5">CAN YAK</span>
+              </div>
+            </motion.button>
+          )}
+
           <motion.button 
             onClick={useHint} 
             disabled={stats.hintsFreeze <= 0}
@@ -569,7 +651,7 @@ export const WordPuzzle: React.FC<{
                 disabled={selectedChoice !== null || eliminatedChoices.includes(opt)}
                 className={`group relative h-16 sm:h-20 rounded-[24px] transition-all duration-500 flex items-center justify-center overflow-hidden border
                   ${(selectedChoice === opt) 
-                    ? (choiceStatus === 'success' ? 'bg-emerald-500/30 border-emerald-400 scale-105 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-rose-500/30 border-rose-400 scale-95 opacity-80') 
+                    ? (choiceStatus === 'idle' ? 'bg-white/20 border-white/40 scale-102 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : (choiceStatus === 'success' ? 'bg-emerald-500/30 border-emerald-400 scale-105 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-rose-500/30 border-rose-400 scale-95 opacity-80')) 
                     : 'bg-black/40 hover:brightness-110 active:scale-[0.98]'}
                   ${(selectedChoice !== null && selectedChoice !== opt) || eliminatedChoices.includes(opt) ? 'opacity-20 scale-90 blur-[2px] grayscale' : 'opacity-100'}
                   ${isPeekPhase ? 'opacity-60' : 'opacity-100'}`}
@@ -578,7 +660,7 @@ export const WordPuzzle: React.FC<{
                   backgroundColor: selectedChoice === opt ? undefined : `${btnColor}10`
                 }}
               >
-                {selectedChoice === opt && (
+                {selectedChoice === opt && choiceStatus !== 'idle' && (
                   <div className={`absolute inset-0 blur-2xl opacity-30 animate-pulse ${choiceStatus === 'success' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                 )}
                 <div className="relative z-10 w-full px-6 flex items-center justify-center">

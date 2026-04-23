@@ -7,6 +7,7 @@ export enum GameState {
   MEMORY_GAME = 'MEMORY_GAME',
   MEMORY_PREPARE = 'MEMORY_PREPARE',
   WORD_PUZZLE = 'WORD_PUZZLE',
+  TUTORIAL = 'TUTORIAL',
   LEVEL_COMPLETE = 'LEVEL_COMPLETE',
   LEVEL_FAIL = 'LEVEL_FAIL',
   NEXT_LEVEL_TRANSITION = 'NEXT_LEVEL_TRANSITION'
@@ -30,19 +31,17 @@ export interface UserStats {
   stars: number;
   level: number;
   lastLifeRefillTime: number;
-  // Tekrar Bak (Peek) Sistemi
-  hintsFreeze: number; // "Göremedim" hakkı
-  hintsReveal: number; // "Bulamadım" hakkı
-  // Görevler
-  claimedMissions: number[]; // Alınan ödüllerin ID'leri
-  lastMissionsRefresh: number; // Görevlerin en son ne zaman sıfırlandığı (timestamp)
-  lastChestOpenTime: number; // Günlük sandığın en son ne zaman açıldığı
-  // Dinamik Zorluk Parametreleri (Yerel)
-  difficultyFactor: number; // 0.5 (Kolay) - 2.0 (Zor) arası
-  performanceHistory: boolean[]; // Son geçit başarı geçmişi
-  streak: number; // Mevcut doğru cevap serisi
-  maxStreak: number; // Rekor doğru cevap serisi
-  levelStars: Record<number, number>; // Level ID -> Star count (1-3)
+  hintsFreeze: number;
+  hintsReveal: number;
+  claimedMissions: number[];
+  lastMissionsRefresh: number;
+  lastChestOpenTime: number;
+  difficultyFactor: number;
+  performanceHistory: boolean[];
+  streak: number;
+  maxStreak: number;
+  levelStars: Record<number, number>;
+  activeRisk: number; // Risk edilen puan miktarını tutar (0 = risk yok)
 }
 
 export interface Question {
@@ -64,4 +63,14 @@ export interface LeaderboardRankData {
 export interface RankUpData {
   title: string;
   color: string;
+}
+
+export interface LeaderboardEntry {
+  user_id: string;
+  username: string;
+  score: number;
+  level: number;
+  stars: number;
+  photo_url: string;
+  isBot?: boolean;
 }

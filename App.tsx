@@ -9,11 +9,13 @@ import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { LevelFailModal } from './components/LevelFailModal';
 import { ChestModal } from './components/ChestModal';
 import { MemoryTransitionModal } from './components/MemoryTransitionModal';
+import { VisualTutorial } from './components/VisualTutorial';
 import { LevelTransition } from './components/LevelTransition';
 import { SplashScreen } from './components/SplashScreen';
 import { RankUpNotification } from './components/RankUpNotification';
 import { LeaderboardRankUpNotification } from './components/LeaderboardRankUpNotification';
 import { PrivacyPolicyModal } from './components/PrivacyPolicyModal';
+import { SoundManager } from './managers/SoundManager';
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import { PlanetProvider, usePlanets } from './PlanetProvider';
 import { fetchQuestions } from './lib/supabase.ts';
@@ -58,10 +60,23 @@ const AppMain: React.FC<AppMainProps> = ({ stats, sync, flow, economy, missions,
       case GameState.SPLASH: return <SplashScreen onFinished={() => flow.changeGameState(GameState.LOADING)} />;
       case GameState.LOADING: return <LoadingScreen backgroundUrl={gameData.currentPlanetImage} onFinished={() => flow.changeGameState(GameState.HUB)} />;
       case GameState.HUB: return <HubScreen stats={stats} currentUser={sync.currentUser} isSyncing={sync.isSyncing} hubSubView={ui.hubSubView} setHubSubView={ui.setHubSubView} onStartGame={economy.handleStartGame} onAddCoins={(amt) => economy.updateStats({ coins: stats.coins + amt })} onBuyHearts={(c, a) => economy.handleBuyItem(c, 'HEART', a)} onBuyItem={economy.handleBuyItem} onWatchVideo={economy.handleWatchVideo} onOpenChest={() => ui.setShowChest(true)} onClaimMission={missions.handleClaimMission} levelStars={stats.levelStars} settings={settings.settings} onUpdateSettings={settings.onUpdateSettings} onOpenPrivacy={() => privacy.setShowPrivacy(true)} />;
+      case GameState.TUTORIAL: return <VisualTutorial onComplete={() => {
+        localStorage.setItem('eva_tutorial_seen', 'true');
+        flow.changeGameState(GameState.WORD_PUZZLE);
+      }} />;
       case GameState.WORD_PUZZLE: return <WordPuzzle stats={stats} level={level} questions={gameData.questions} onComplete={gameData.handlePuzzleComplete} onExit={economy.handleExitWithPenalty} onUpdateStats={economy.updateStats} />;
-      case GameState.MEMORY_PREPARE: return <MemoryTransitionModal onConfirm={() => flow.changeGameState(GameState.MEMORY_GAME)} onExit={economy.handleExitWithPenalty} />;
+      case GameState.MEMORY_PREPARE: return (
+        <MemoryTransitionModal 
+          currentCoins={stats.coins}
+          onConfirm={(bet) => {
+            if (bet) economy.handleApplyRisk(bet);
+            flow.changeGameState(GameState.MEMORY_GAME);
+          }} 
+          onExit={economy.handleExitWithPenalty} 
+        />
+      );
       case GameState.MEMORY_GAME: return <MemoryGame stats={stats} level={level} backgroundUrl="" words={gameData.fullWordPool} targetWords={gameData.targetWords} onNext={gameData.handleGameComplete} onFail={economy.handleLevelFail} onExit={economy.handleExitWithPenalty} onUpdateStats={economy.updateStats} initialScore={ui.sessionScore} />;
-      case GameState.LEVEL_COMPLETE: return <LevelCompleteModal level={level} coinsEarned={ui.sessionScore + ui.bonusEarned} starsEarned={ui.starsEarnedInLevel} onContinue={gameData.handleContinueNextLevel} onMenu={gameData.handleGoToMenu} />;
+      case GameState.LEVEL_COMPLETE: return <LevelCompleteModal level={level} coinsEarned={ui.sessionScore + ui.bonusEarned} starsEarned={ui.starsEarnedInLevel} riskReward={ui.riskReward} onContinue={gameData.handleContinueNextLevel} onMenu={gameData.handleGoToMenu} />;
       case GameState.NEXT_LEVEL_TRANSITION: return <LevelTransition level={level} onFinished={() => flow.changeGameState(GameState.WORD_PUZZLE)} />;
       case GameState.LEVEL_FAIL: return <LevelFailModal hearts={stats.hearts} lastLifeRefillTime={stats.lastLifeRefillTime} onRetry={() => stats.hearts > 0 ? flow.changeGameState(GameState.WORD_PUZZLE) : ui.setHubSubView(HubSubView.SHOP)} onShop={() => { flow.changeGameState(GameState.HUB); ui.setHubSubView(HubSubView.SHOP); }} onExit={() => { flow.setReplayingLevel(null); flow.changeGameState(GameState.HUB); }} onWatchVideo={economy.handleWatchVideo} />;
       default: return <LoadingScreen backgroundUrl={gameData.currentPlanetImage} />;
@@ -118,14 +133,58 @@ const AppContent: React.FC = () => {
   };
 
   const handleGameComplete = (count: number) => {
-    const stars = count === 5 ? 3 : count >= 4 ? 2 : 1; const bonus = count * 50;
-    ui.setStarsEarnedInLevel(stars); ui.setBonusEarned(bonus);
-    const lvl = flow.replayingLevel || economy.stats.level; const improved = Math.max(0, stars - (economy.stats.levelStars[lvl] || 0));
-    economy.setStats(p => ({ ...p, stars: p.stars + improved, coins: p.coins + ui.sessionScore + bonus, levelStars: { ...p.levelStars, [lvl]: Math.max(p.levelStars[lvl] || 0, stars) } }));
+    const actualCorrectCount = Math.min(5, count);
+    const speedBonusCount = Math.max(0, count - 5);
+    
+    const stars = actualCorrectCount === 5 ? 3 : actualCorrectCount >= 4 ? 2 : 1; 
+    let baseBonus = actualCorrectCount * 50;
+    
+    // Calculate total earned in this session
+    let totalLvlCoins = ui.sessionScore + baseBonus + (speedBonusCount * 100);
+    
+    // RİSK DEĞERLENDİRMESİ
+    const activeRisk = economy.stats.activeRisk;
+    let riskRewardAmount = 0;
+    if (activeRisk > 0) {
+      if (stars === 3) {
+        // Risk kazandı!
+        const multiplier = activeRisk === 500 ? 5 : 3;
+        riskRewardAmount = activeRisk * multiplier;
+        totalLvlCoins += riskRewardAmount;
+        SoundManager.getInstance().playJackpot();
+      } else {
+        // Risk kaybetti
+        SoundManager.getInstance().playFire();
+      }
+    }
+
+    // ADRENALİN MODU: Son candayken tüm ödüller 2 katı!
+    const isAdrenaline = economy.stats.hearts === 1;
+    if (isAdrenaline) {
+      totalLvlCoins *= 2;
+      riskRewardAmount *= 2; // Ödül de katlanır!
+      SoundManager.getInstance().playJackpot();
+    }
+
+    ui.setStarsEarnedInLevel(stars);
+    ui.setRiskReward(riskRewardAmount);
+    ui.setBonusEarned(totalLvlCoins - ui.sessionScore);
+    
+    const lvl = flow.replayingLevel || economy.stats.level;
+    const improvedStars = Math.max(0, stars - (economy.stats.levelStars[lvl] || 0));
+    
+    economy.setStats(p => ({ 
+      ...p, 
+      stars: p.stars + improvedStars, 
+      coins: p.coins + totalLvlCoins, 
+      activeRisk: 0, // Riski sıfırla
+      levelStars: { ...p.levelStars, [lvl]: Math.max(p.levelStars[lvl] || 0, stars) } 
+    }));
+    
     flow.changeGameState(GameState.LEVEL_COMPLETE);
   };
 
-  const gameData = { ...game, currentPlanetImage, handlePuzzleComplete, handleGameComplete, handleGoToMenu: () => { if (!flow.replayingLevel) economy.setStats(p => ({...p, level: p.level + 1})); flow.setReplayingLevel(null); flow.changeGameState(GameState.HUB); }, handleContinueNextLevel: () => { if (!flow.replayingLevel) economy.setStats(p => ({...p, level: p.level + 1})); flow.setReplayingLevel(null); flow.changeGameState(GameState.NEXT_LEVEL_TRANSITION); } };
+  const gameData = { ...game, currentPlanetImage, handlePuzzleComplete, handleGameComplete, handleGoToMenu: () => { if (!flow.replayingLevel) economy.setStats(p => ({...p, level: p.level + 1, activeRisk: 0})); flow.setReplayingLevel(null); flow.changeGameState(GameState.HUB); }, handleContinueNextLevel: () => { if (!flow.replayingLevel) economy.setStats(p => ({...p, level: p.level + 1, activeRisk: 0})); flow.setReplayingLevel(null); flow.changeGameState(GameState.NEXT_LEVEL_TRANSITION); } };
 
   return (
     <ThemeProvider planetImageUrl={currentPlanetImage}>

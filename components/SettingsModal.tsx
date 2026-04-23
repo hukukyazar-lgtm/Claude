@@ -124,6 +124,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, settings,
             
             {[
               { icon: Globe, label: "DİL", value: "TÜRKÇE", action: () => {} },
+              { icon: HelpCircle, label: "REHBERİ TEKRARLA", action: () => {
+                localStorage.removeItem('eva_tutorial_seen');
+                alert('Rehber sıfırlandı! Bir sonraki oyunda tekrar göreceksiniz.');
+              } },
               { icon: Shield, label: "GİZLİLİK POLİTİKASI", action: () => onOpenPrivacy() },
               { icon: Info, label: "VERSİYON", value: "1.0.4", action: () => {} }
             ].map((item, idx) => (

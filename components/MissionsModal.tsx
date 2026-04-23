@@ -43,43 +43,43 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, stats, on
   const missionDefinitions = [
     { 
       id: 1, 
-      title: "2 GEÇİT TAMAMLA", 
+      title: "KEŞİF BAŞLIYOR", 
       progress: stats.level - 1, 
-      total: 2, 
-      reward: 500, 
+      total: 3, 
+      reward: 1500, 
       color: palette[0], 
       icon: Rocket,
-      desc: "KEŞİF"
+      desc: "3 Bölüm Tamamla"
     },
     { 
       id: 2, 
-      title: "1 GEZEGEN DEĞİŞTİR", 
+      title: "SİSTEM HAKİMİ", 
       progress: Math.floor((stats.level - 1) / 6), 
       total: 1, 
-      reward: 2500, 
+      reward: 7500, 
       color: palette[3] || palette[0], 
       icon: Map,
-      desc: "YOLCULUK"
+      desc: "Bir Gezegeni Bitir"
     },
     { 
       id: 3, 
-      title: "18 YILDIZ TOPLA", 
+      title: "YILDIZ AVCISI", 
       progress: stats.stars, 
-      total: 18, 
-      reward: 1200, 
+      total: 25, 
+      reward: 4500, 
       color: palette[1] || palette[0], 
       icon: Target,
-      desc: "USTALIK"
+      desc: "25 Yıldız Kazan"
     },
     { 
       id: 4, 
-      title: "6 KOMBO YAP", 
-      progress: stats.maxStreak >= 6 ? 1 : 0, 
+      title: "HİPER ODAK", 
+      progress: stats.maxStreak >= 8 ? 1 : 0, 
       total: 1, 
-      reward: 800, 
+      reward: 3000, 
       color: palette[2] || palette[0], 
       icon: Zap,
-      desc: "ODAK"
+      desc: "8'li Seri Yap"
     },
   ];
 
@@ -161,7 +161,8 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, stats, on
                     </div>
 
                     <div className="flex flex-col items-center min-w-0 flex-1 justify-center mb-4">
-                      <span className="text-white font-black text-sm sm:text-xl tracking-tight uppercase mb-2 italic leading-tight drop-shadow-lg">{mission.title}</span>
+                      <span className="text-white font-black text-sm sm:text-xl tracking-tight uppercase mb-1 italic leading-tight drop-shadow-lg line-clamp-1 w-full">{mission.title}</span>
+                      <span className="text-white/40 font-bold text-[9px] sm:text-xs tracking-wider uppercase mb-2 line-clamp-1 w-full">{mission.desc}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm sm:text-lg font-black text-amber-400">+{mission.reward}</span>
                         <div className="shrink-0 mt-0.5">
@@ -194,20 +195,31 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, stats, on
                           <span className="font-black tracking-tighter text-xs sm:text-sm italic relative z-10">ÖDÜLÜ AL</span>
                         </Button>
                       ) : (
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="flex gap-2">
-                            {[...Array(mission.total)].map((_, i) => (
-                              <div 
-                                key={i} 
-                                className={`w-3 h-3 rounded-full transition-all duration-700 border
-                                  ${(i + 1) <= mission.progress 
-                                    ? 'shadow-[0_0_12px_rgba(255,255,255,0.7)] border-white' 
-                                    : 'bg-white/5 border-white/10'}`}
-                                style={{ backgroundColor: (i + 1) <= mission.progress ? mission.color : undefined }}
+                        <div className="flex flex-col items-center gap-3 w-full">
+                          {mission.total <= 5 ? (
+                            <div className="flex gap-2">
+                              {[...Array(mission.total)].map((_, i) => (
+                                <div 
+                                  key={i} 
+                                  className={`w-2.5 h-2.5 rounded-full transition-all duration-700 border
+                                    ${(i + 1) <= mission.progress 
+                                      ? 'shadow-[0_0_12px_rgba(255,255,255,0.7)] border-white' 
+                                      : 'bg-white/5 border-white/10'}`}
+                                  style={{ backgroundColor: (i + 1) <= mission.progress ? mission.color : undefined }}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[1px]">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, (mission.progress / mission.total) * 100)}%` }}
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: mission.color, boxShadow: `0 0 10px ${mission.color}` }}
                               />
-                            ))}
-                          </div>
-                          <span className="text-xs font-black text-white/40 italic">{Math.min(mission.progress, mission.total)}/{mission.total}</span>
+                            </div>
+                          )}
+                          <span className="text-xs font-black text-white/40 italic">{Math.min(mission.progress, mission.total)} / {mission.total}</span>
                         </div>
                       )}
                     </div>

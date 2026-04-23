@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, fetchCloudStats, syncUserStats, reconcileStats, secureSyncStats } from '../lib/firebase.ts';

@@ -8,6 +8,7 @@ export const useGameUI = () => {
   const [bonusEarned, setBonusEarned] = useState(0);
   const [sessionScore, setSessionScore] = useState(0);
   const [starsEarnedInLevel, setStarsEarnedInLevel] = useState(0);
+  const [riskReward, setRiskReward] = useState(0);
 
   return {
     hubSubView,
@@ -19,6 +20,8 @@ export const useGameUI = () => {
     sessionScore,
     setSessionScore,
     starsEarnedInLevel,
-    setStarsEarnedInLevel
+    setStarsEarnedInLevel,
+    riskReward,
+    setRiskReward
   };
 };

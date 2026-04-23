@@ -1,10 +1,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { UserStats, LeaderboardRankData, RankUpData } from '../types';
+import { UserStats, LeaderboardRankData, RankUpData, LeaderboardEntry } from '../types';
 import { User } from 'firebase/auth';
 import { fetchLeaderboard, toUUID } from '../lib/supabase.ts';
 
-import { generateBots, LeaderboardEntry } from '../utils/generateBots';
+import { generateBots } from '../utils/generateBots';
 
 export const useLeaderboard = (stats: UserStats, currentUser: User | null) => {
   const [currentRank, setCurrentRank] = useState<number | null>(null);

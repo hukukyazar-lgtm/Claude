@@ -37,28 +37,27 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
   const [timeLeft, setTimeLeft] = useState(30); 
   const [isGameOver, setIsGameOver] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [lastCorrectTime, setLastCorrectTime] = useState(Date.now());
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const [showPortalOpenMsg, setShowPortalOpenMsg] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string, color: string, id: number } | null>(null);
+
+  const isLastHeart = stats.hearts === 1;
 
   const useFindHint = () => {
     if (stats.hintsReveal <= 0 || isMenuOpen || isGameOver || selected.size >= 5) return;
     
-    // Find a correct word that isn't selected yet
-    const unselectedCorrectIndices = Array.from(correctIndices).filter(idx => !selected.has(idx));
+    const unselectedCorrectIndices = (Array.from(correctIndices) as number[]).filter(idx => !selected.has(idx as number));
     if (unselectedCorrectIndices.length === 0) return;
     
     const randomCorrectIdx = unselectedCorrectIndices[Math.floor(Math.random() * unselectedCorrectIndices.length)];
-    
     onUpdateStats({ hintsReveal: stats.hintsReveal - 1 });
     SoundManager.getInstance().playCoin();
-    
-    handleWordClick(randomCorrectIdx);
+    handleWordClick(randomCorrectIdx as number);
   };
   
-  // Timer logic
   useEffect(() => {
     if (isMenuOpen || isGameOver) return;
-
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -68,11 +67,9 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [isMenuOpen, isGameOver]);
 
-  // Handle time up
   useEffect(() => {
     if (timeLeft === 0 && !isGameOver) {
       if (correctCount < 3) {
@@ -80,7 +77,6 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
         SoundManager.getInstance().playFail();
         onFail();
       } else {
-        // En az 3 doğru varsa süre bitince otomatik bitir
         onNext(correctCount);
       }
     }
@@ -91,19 +87,32 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
     color: palette[i % palette.length]
   })), [words, palette]);
 
-  const correctIndices = useMemo(() => new Set(displayWords.map((item, i) => targetWords.includes(item.word) ? i : -1).filter(i => i !== -1)), [displayWords, targetWords]);
+  const correctIndices = useMemo(() => new Set<number>(displayWords.map((item, i) => targetWords.includes(item.word) ? i : -1).filter(i => i !== -1)), [displayWords, targetWords]);
 
+  // Handle word selection logic
   const handleWordClick = (i: number) => {
     if (isGameOver || selected.has(i) || selected.size >= 5 || isMenuOpen) return;
     
+    const now = Date.now();
+    const timeToFind = (now - lastCorrectTime) / 1000;
     const isCorrect = correctIndices.has(i);
     setSelected(prev => new Set(prev).add(i));
     
     if (isCorrect) {
       const newCorrectCount = correctCount + 1;
       setCorrectCount(newCorrectCount);
-      setFeedback({ text: 'DOĞRU!', color: '#4ade80', id: Date.now() });
+      
+      // Speed Multiplier Logic: Under 2s = 2x, Under 4s = 1.5x, else 1x
+      let currentBonus = 1;
+      if (timeToFind < 2) currentBonus = 2;
+      else if (timeToFind < 4) currentBonus = 1.5;
+      
+      setSpeedMultiplier(prev => (prev + currentBonus) / 2); // Average speed multiplier
+      
+      const speedText = currentBonus === 2 ? 'EFSANE HIZ!' : currentBonus === 1.5 ? 'HIZLI!' : 'DOĞRU!';
+      setFeedback({ text: speedText, color: currentBonus >= 1.5 ? '#facc15' : '#4ade80', id: Date.now() });
       SoundManager.getInstance().playSuccess();
+      setLastCorrectTime(now);
       
       if (newCorrectCount === 3) {
         setShowPortalOpenMsg(true);
@@ -111,11 +120,12 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
       }
       
       if (newCorrectCount === 5) {
-        setTimeout(() => onNext(5), 1000);
+        setTimeout(() => onNext(5 + (speedMultiplier > 1.5 ? 2 : speedMultiplier > 1.2 ? 1 : 0)), 1000);
       }
     } else {
       setFeedback({ text: 'YANLIŞ!', color: '#f87171', id: Date.now() });
       SoundManager.getInstance().playFail();
+      setLastCorrectTime(now);
     }
 
     // Feedback'i temizle
@@ -136,7 +146,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ stats, level, words, tar
   };
 
   return (
-    <div className="absolute inset-0 bg-[#020617] flex flex-col overflow-hidden font-sans select-none">
+    <div className={`absolute inset-0 bg-[#020617] flex flex-col overflow-hidden font-sans select-none transition-all duration-1000 ${isLastHeart ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.3)] ring-8 ring-red-500/20' : ''}`}>
       <ParticleBackground 
         speedMultiplier={0.3 * stats.difficultyFactor} 
         level={level} 

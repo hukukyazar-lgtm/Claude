@@ -5,6 +5,7 @@ import { UserStats } from '../types';
 import { LoginModal } from './LoginModal';
 import { syncSupabaseStats, fetchLeaderboard, fetchUserRank, supabase, toUUID } from '../lib/supabase';
 import { User as FirebaseUser } from 'firebase/auth';
+import { LeaderboardEntry } from '../types';
 import { 
   Trophy, Star, Zap, Orbit, CloudUpload, Crown, 
   AlertCircle, RefreshCw, User, Gamepad2, 
@@ -14,6 +15,7 @@ import { Cube3D } from './Cube3D';
 import { useTheme } from '../ThemeProvider';
 import { usePlanets } from '../PlanetProvider';
 import { motion, AnimatePresence } from 'motion/react';
+import { generateBots } from '../utils/generateBots';
 
 type Tab = 'GLOBAL' | 'MY_STATS';
 
@@ -29,8 +31,8 @@ export const RankingModal: React.FC<RankingModalProps> = ({ onClose, stats, curr
   const { planetNames } = usePlanets();
   const [activeTab, setActiveTab] = useState<Tab>('GLOBAL');
   const [showLogin, setShowLogin] = useState(false);
-  const [leaderBoard, setLeaderBoard] = useState<any[]>([]);
-  const [userRankData, setUserRankData] = useState<any | null>(null);
+  const [leaderBoard, setLeaderBoard] = useState<LeaderboardEntry[]>([]);
+  const [userRankData, setUserRankData] = useState<LeaderboardEntry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isManualSyncing, setIsManualSyncing] = useState(false);
@@ -75,22 +77,9 @@ export const RankingModal: React.FC<RankingModalProps> = ({ onClose, stats, curr
     try {
       const data = await fetchLeaderboard();
       
-      // Bot kullanıcıları oluştur
-      const botNames = [
-        "Nova", "Astro", "Cosmo", "Stellar", "Nebula", "Orion", "Lyra", "Vega", "Altair", "Sirius",
-        "Rigel", "Antares", "Spica", "Pollux", "Castor", "Procyon", "Capella", "Arcturus", "Canopus", "Polaris",
-        "Zenith", "Nadira", "Eclipse", "Solstice", "Equinox", "Quasar", "Pulsar", "Void", "Aether", "Chaos",
-        "Titan", "Atlas", "Helios", "Selene", "Eos", "Nyx", "Hypnos", "Thanatos", "Nemesis", "Eris"
-      ];
-      
-      const bots = botNames.map((name, index) => ({
-        user_id: `bot-${index}`,
-        username: name,
-        score: 50000 - (index * 1200) + Math.floor(Math.random() * 500),
-        level: Math.max(1, 50 - Math.floor(index / 1.5)),
-        stars: Math.max(0, 150 - index * 3 + Math.floor(Math.random() * 10)),
-        photo_url: `https://picsum.photos/seed/bot${index}/200/200`
-      }));
+      // Bot kullanıcıları deterministik olarak oluştur (Seed: Günlük bazda)
+      const daySeed = Math.floor(Date.now() / 86400000);
+      const bots = generateBots(daySeed);
 
       // Gerçek verilerle botları birleştir ve sırala
       const combined = [...(data || []), ...bots].sort((a, b) => (b.score || 0) - (a.score || 0));

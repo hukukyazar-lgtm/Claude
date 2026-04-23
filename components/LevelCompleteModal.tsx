@@ -13,6 +13,7 @@ interface LevelCompleteModalProps {
   level: number;
   coinsEarned: number;
   starsEarned: number;
+  riskReward?: number;
   onContinue: () => void;
   onMenu: () => void;
 }
@@ -159,6 +160,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   level, 
   coinsEarned, 
   starsEarned,
+  riskReward = 0,
   onContinue,
   onMenu
 }) => {
@@ -328,6 +330,15 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
                                 <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-amber-950" />
                               </motion.div>
                             </div>
+                            {riskReward > 0 && (
+                               <motion.div 
+                                 initial={{ scale: 0 }}
+                                 animate={{ scale: 1 }}
+                                 className="mt-2 bg-gradient-to-r from-indigo-400 to-indigo-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded border border-white/20 uppercase italic tracking-widest"
+                               >
+                                 +{riskReward} ANLAŞMA PRİMİ
+                               </motion.div>
+                            )}
                          </div>
                          <div className="flex flex-col items-end gap-2 shrink-0 relative">
                             <AnimatePresence>
