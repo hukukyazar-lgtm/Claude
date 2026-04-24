@@ -1,54 +1,53 @@
-name: Build Signed AAB
+name: Build Android App Bundle
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: 'zulu'
+          java-version: '21'
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
         run: npm install
 
-      - name: Build web app
+      - name: Build Web Assets
         run: npm run build
 
       - name: Sync Capacitor
-        run: npx cap sync android
-        
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.0'
+        run: npx cap sync
+
       - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/lumina.keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
-      - name: Build signed AAB
+      - name: Build with Gradle
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/android/app/lumina.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+          chmod +x android/gradlew
+          cd android && ./gradlew bundleRelease
+        env:
+          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload AAB
+      - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lumina-release
-          path: android/app/build/outputs/bundle/release/*.aab
-          retention-days: 7      
+          name: lumina-app-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
