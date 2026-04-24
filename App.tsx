@@ -149,7 +149,7 @@ const AppContent: React.FC = () => {
         SoundManager.getInstance().playJackpot();
       } else {
         // Risk kaybetti
-        SoundManager.getInstance().playFire();
+        SoundManager.getInstance().playFail();
       }
     }
 

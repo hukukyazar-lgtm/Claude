@@ -64,12 +64,25 @@ export interface RankUpData {
   color: string;
 }
 
-export interface LeaderboardEntry {
+export interface RealEntry {
   user_id: string;
   username: string;
   score: number;
   level: number;
   stars: number;
   photo_url: string;
-  isBot?: boolean;
+  isBot?: false;
 }
+
+export interface BotEntry {
+  user_id: string;
+  name: string;
+  username: string; // Compatibility
+  score: number;
+  isBot: true;
+  level: number;
+  stars: number;
+  photo_url: string;
+}
+
+export type LeaderboardEntry = RealEntry | BotEntry;

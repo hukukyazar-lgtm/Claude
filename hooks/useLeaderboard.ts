@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { UserStats, LeaderboardRankData, RankUpData, LeaderboardEntry } from '../types';
 import { User } from 'firebase/auth';
 import { fetchLeaderboard, toUUID } from '../lib/supabase.ts';
-
 import { generateBots } from '../utils/generateBots';
 
 export const useLeaderboard = (stats: UserStats, currentUser: User | null) => {
@@ -16,12 +15,17 @@ export const useLeaderboard = (stats: UserStats, currentUser: User | null) => {
     
     try {
       const data = await fetchLeaderboard();
+      
+      // UTC gün bazlı seed (deterministik sıralama için)
       const daySeed = Math.floor(Date.now() / 86400000);
       const bots = generateBots(daySeed);
       
+      // Puan hesaplama
       const score = (newStats.level * 1000) + (newStats.stars * 50) + Math.floor(newStats.coins / 10);
       
+      // Gerçek kullanıcılar ve botları birleştir ve skorlara göre sırala
       const combined: LeaderboardEntry[] = [...(data || []), ...bots].sort((a, b) => (b.score || 0) - (a.score || 0));
+      
       const uuid = toUUID(currentUser.uid);
       const index = combined.findIndex(p => p.user_id === currentUser.uid || p.user_id === uuid);
       
