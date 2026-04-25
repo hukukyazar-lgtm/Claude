@@ -18,6 +18,9 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -34,12 +37,13 @@ jobs:
         run: npx cap sync
 
       - name: Decode Keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+        run: |
+          mkdir -p android/app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
       - name: Build with Gradle
         run: |
-          chmod +x android/gradlew
-          cd android && ./gradlew bundleRelease
+          cd android && gradle bundleRelease
         env:
           RELEASE_STORE_FILE: release.keystore
           RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
