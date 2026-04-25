@@ -9,11 +9,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      name: Checkout Source
+      - name: Checkout Source
         uses: actions/checkout@v4
         with:
           lfs: true
           fetch-depth: 0
+
+      - name: Install Git LFS and fetch objects
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install --system
+          git lfs pull --include="android/app/src/main/res/**" || git lfs pull
+
+      - name: Verify PNG files
+        run: |
+          echo "Checking PNG files..."
+          for f in android/app/src/main/res/mipmap-*/ic_launcher*.png; do
+            echo "$f: $(file -b --mime-type $f) ($(wc -c < $f) bytes)"
+          done
 
       - name: Setup Java
         uses: actions/setup-java@v4
