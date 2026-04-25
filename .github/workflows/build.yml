@@ -20,7 +20,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git-lfs
           git lfs install --system
-          git lfs pull --include="android/app/src/main/res/**" || git lfs pull
+          git lfs pull
+          # Check if the wrapper is an LFS pointer and pull it if so
+          if grep -q "version https://git-lfs.github.com/spec/v1" android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null; then
+            echo "LFS pointer detected for gradle-wrapper.jar, attempting pull..."
+            git lfs pull --include="android/gradle/wrapper/gradle-wrapper.jar"
+          fi
 
       - name: Verify PNG files
         run: |
@@ -121,8 +126,7 @@ jobs:
       - name: Build with Gradle
         run: |
           cd android
-          chmod +x gradlew
-          ./gradlew bundleRelease \
+          gradle bundleRelease \
             --no-daemon \
             -Dorg.gradle.java.home=$JAVA_HOME \
             -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/android/app/lumina.keystore \
