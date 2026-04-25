@@ -49,7 +49,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y imagemagick file pngcrush optipng pngcheck zopfli
-          set -o pipefail
+          set -euo pipefail
 
           # Use magick if available (ImageMagick v7), else fall back to convert
           if command -v magick >/dev/null 2>&1; then
@@ -60,7 +60,8 @@ jobs:
 
           bad=0
           echo "Scanning PNGs under android/app/src/main/res..."
-          find android/app/src/main/res -type f -name '*.png' -print0 | while IFS= read -r -d '' f; do
+          # run while in main shell using process substitution so 'bad' is visible after loop
+          while IFS= read -r -d '' f; do
             echo "----"
             echo "Checking: $f"
             # skip zero-byte files
@@ -79,7 +80,7 @@ jobs:
             fi
 
             # quick check for PNG integrity
-            pngcheck -v "$f" || {
+            if ! pngcheck -v "$f"; then
               echo "pngcheck reports problems for $f — attempting repairs"
               # try ImageMagick re-encode to PNG32
               if $IM_CONVERT "$f" -strip -define png:format=png32 "$f".tmp 2>/dev/null; then
@@ -99,7 +100,7 @@ jobs:
                   fi
                 fi
               fi
-            }
+            fi
 
             # final validation after repair attempts
             if ! pngcheck -v "$f"; then
@@ -108,7 +109,7 @@ jobs:
             else
               echo "OK: $f"
             fi
-          done
+          done < <(find android/app/src/main/res -type f -name '*.png' -print0)
 
           if [ "$bad" -ne 0 ]; then
             echo "One or more PNG files are corrupted or not aapt2-compatible. Fix or replace listed files and re-run."
