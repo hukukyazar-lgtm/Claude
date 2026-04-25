@@ -16,24 +16,11 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    signingConfigs {
-        release {
-            storeFile file(System.getenv("RELEASE_STORE_FILE") ?: "lumina.keystore")
-            storePassword System.getenv("RELEASE_STORE_PASSWORD") ?: "Asena1numara!"
-            keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "lumina"
-            keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "Asena1numara!"
-        }
-    }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
     }
 }
 
@@ -65,5 +52,3 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
-
-
