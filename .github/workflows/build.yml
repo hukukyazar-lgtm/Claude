@@ -45,6 +45,16 @@ jobs:
           mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
+      - name: Re-encode Android PNGs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          set -e
+          find android/app/src/main/res -type f -name '*.png' -print0 | while IFS= read -r -d '' f; do
+            echo "Re-encoding $f"
+            convert "$f" -strip -define png:format=png32 "$f".tmp && mv "$f".tmp "$f"
+          done
+
       - name: Build with Gradle
         run: |
           cd android
