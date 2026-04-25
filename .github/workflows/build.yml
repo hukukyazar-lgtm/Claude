@@ -20,6 +20,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,7 +45,8 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          cd android && gradle bundleRelease
+          cd android
+          gradle bundleRelease --stacktrace
         env:
           RELEASE_STORE_FILE: release.keystore
           RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
