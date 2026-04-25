@@ -48,11 +48,38 @@ jobs:
       - name: Re-encode Android PNGs
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y imagemagick file pngcrush
           set -e
+          # Process PNG files safely: skip zero-byte and non-PNG files,
+          # try convert first, fallback to pngcrush, never abort entire job for a single file.
           find android/app/src/main/res -type f -name '*.png' -print0 | while IFS= read -r -d '' f; do
+            echo "Checking $f"
+            # skip zero-byte files
+            if [ ! -s "$f" ]; then
+              echo "Skipping zero-byte file: $f"
+              continue
+            fi
+            # ensure file content is actually PNG
+            mime=$(file -b --mime-type "$f" || echo "unknown")
+            if [ "$mime" != "image/png" ]; then
+              echo "Skipping non-PNG file: $f (mime=$mime)"
+              continue
+            fi
             echo "Re-encoding $f"
-            convert "$f" -strip -define png:format=png32 "$f".tmp && mv "$f".tmp "$f"
+            # try ImageMagick; if it fails try pngcrush; on failure skip file but continue job
+            if convert "$f" -strip -define png:format=png32 "$f".tmp 2>/dev/null; then
+              mv "$f".tmp "$f"
+              echo "convert succeeded for $f"
+            else
+              echo "convert failed for $f — attempting pngcrush"
+              if pngcrush -q -reduce -brute "$f" "$f".tmp >/dev/null 2>&1 && mv "$f".tmp "$f"; then
+                echo "pngcrush succeeded for $f"
+              else
+                echo "Both convert and pngcrush failed for $f — skipping"
+                rm -f "$f".tmp || true
+                continue
+              fi
+            fi
           done
 
       - name: Build with Gradle
