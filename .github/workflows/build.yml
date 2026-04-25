@@ -45,42 +45,78 @@ jobs:
           mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
-      - name: Re-encode Android PNGs
+      - name: Re-encode and validate Android PNGs
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick file pngcrush
-          set -e
-          # Process PNG files safely: skip zero-byte and non-PNG files,
-          # try convert first, fallback to pngcrush, never abort entire job for a single file.
+          sudo apt-get install -y imagemagick file pngcrush optipng pngcheck zopfli
+          set -o pipefail
+
+          # Use magick if available (ImageMagick v7), else fall back to convert
+          if command -v magick >/dev/null 2>&1; then
+            IM_CONVERT="magick"
+          else
+            IM_CONVERT="convert"
+          fi
+
+          bad=0
+          echo "Scanning PNGs under android/app/src/main/res..."
           find android/app/src/main/res -type f -name '*.png' -print0 | while IFS= read -r -d '' f; do
-            echo "Checking $f"
+            echo "----"
+            echo "Checking: $f"
             # skip zero-byte files
             if [ ! -s "$f" ]; then
-              echo "Skipping zero-byte file: $f"
+              echo "ERROR: zero-byte file -> $f"
+              bad=1
               continue
             fi
-            # ensure file content is actually PNG
+
             mime=$(file -b --mime-type "$f" || echo "unknown")
+            echo "mime: $mime"
             if [ "$mime" != "image/png" ]; then
-              echo "Skipping non-PNG file: $f (mime=$mime)"
+              echo "ERROR: not recognized as PNG -> $f (mime=$mime)"
+              bad=1
               continue
             fi
-            echo "Re-encoding $f"
-            # try ImageMagick; if it fails try pngcrush; on failure skip file but continue job
-            if convert "$f" -strip -define png:format=png32 "$f".tmp 2>/dev/null; then
-              mv "$f".tmp "$f"
-              echo "convert succeeded for $f"
-            else
-              echo "convert failed for $f — attempting pngcrush"
-              if pngcrush -q -reduce -brute "$f" "$f".tmp >/dev/null 2>&1 && mv "$f".tmp "$f"; then
-                echo "pngcrush succeeded for $f"
+
+            # quick check for PNG integrity
+            pngcheck -v "$f" || {
+              echo "pngcheck reports problems for $f — attempting repairs"
+              # try ImageMagick re-encode to PNG32
+              if $IM_CONVERT "$f" -strip -define png:format=png32 "$f".tmp 2>/dev/null; then
+                mv "$f".tmp "$f"
+                echo "ImageMagick succeeded for $f"
               else
-                echo "Both convert and pngcrush failed for $f — skipping"
-                rm -f "$f".tmp || true
-                continue
+                echo "ImageMagick failed; trying optipng"
+                if optipng -o7 -out "$f".tmp "$f" >/dev/null 2>&1 && mv "$f".tmp "$f"; then
+                  echo "optipng succeeded for $f"
+                else
+                  echo "optipng failed; trying zopflipng"
+                  if zopflipng --lossless "$f" "$f".tmp >/dev/null 2>&1 && mv "$f".tmp "$f"; then
+                    echo "zopflipng succeeded for $f"
+                  else
+                    echo "All repair attempts failed for $f"
+                    bad=1
+                  fi
+                fi
               fi
+            }
+
+            # final validation after repair attempts
+            if ! pngcheck -v "$f"; then
+              echo "FINAL CHECK FAILED for $f"
+              bad=1
+            else
+              echo "OK: $f"
             fi
           done
+
+          if [ "$bad" -ne 0 ]; then
+            echo "One or more PNG files are corrupted or not aapt2-compatible. Fix or replace listed files and re-run."
+            # Print a quick listing for troubleshooting
+            ls -l android/app/src/main/res/mipmap-*/ic_launcher*.png || true
+            exit 1
+          fi
+        shell: bash
 
       - name: Build with Gradle
         run: |
