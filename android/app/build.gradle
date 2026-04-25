@@ -18,10 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file(System.getenv("RELEASE_STORE_FILE") ?: "lumina.keystore")
-            storePassword System.getenv("RELEASE_STORE_PASSWORD") ?: "Asena1numara!"
-            keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "lumina"
-            keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "Asena1numara!"
+            storeFile file(project.findProperty("RELEASE_STORE_FILE") ?: System.getenv("RELEASE_STORE_FILE") ?: "lumina.keystore")
+            storePassword project.findProperty("RELEASE_STORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "Asena1numara!"
+            keyAlias project.findProperty("RELEASE_KEY_ALIAS") ?: System.getenv("RELEASE_KEY_ALIAS") ?: "lumina"
+            keyPassword project.findProperty("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEY_PASSWORD") ?: "Asena1numara!"
         }
     }
     buildTypes {
