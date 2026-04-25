@@ -65,7 +65,14 @@ jobs:
       - name: Decode Keystore
         run: |
           mkdir -p android/app
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/lumina.keystore
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/lumina.keystore
+            echo "Keystore decoded."
+            file android/app/lumina.keystore
+            ls -l android/app/lumina.keystore
+          else
+            echo "Warning: KEYSTORE_BASE64 secret is empty"
+          fi
 
       - name: Re-encode and validate Android PNGs
         run: |
@@ -128,12 +135,13 @@ jobs:
           cd android
           gradle bundleRelease \
             --no-daemon \
-            -Dorg.gradle.java.home=$JAVA_HOME \
-            -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/android/app/lumina.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+            --stacktrace \
+            -Dorg.gradle.java.home=$JAVA_HOME
         env:
+          RELEASE_STORE_FILE: lumina.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
       - name: Upload AAB Artifact
