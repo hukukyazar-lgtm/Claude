@@ -65,17 +65,44 @@ jobs:
       - name: Decode Keystore
         run: |
           mkdir -p android/app
-          if [ -f "android/app/lumina.keystore" ]; then
-            echo "Keystore file already exists in repository, skipping decode."
+          TARGET="android/app/lumina.keystore"
+          
+          if [ -f "$TARGET" ]; then
+            echo "Keystore detected in repository: $TARGET"
+            # Check if it's an LFS pointer
+            if grep -q "version https://git-lfs.github.com/spec/v1" "$TARGET"; then
+              echo "WARNING: Keystore is an LFS pointer. Attempting to pull full file..."
+              git lfs pull --include="$TARGET"
+            fi
           elif [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/lumina.keystore
-            echo "Keystore decoded from KEYSTORE_BASE64 secret."
-            ls -l android/app/lumina.keystore
+            echo "Decoding KEYSTORE_BASE64 secret..."
+            # Strip potential whitespace and decode
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n\r ' | base64 --decode > "$TARGET"
+            echo "Keystore decoded from secret."
           else
-            echo "ERROR: No keystore found in repository and KEYSTORE_BASE64 secret is empty."
-            echo "Please add KEYSTORE_BASE64 to GitHub Actions Secrets or upload lumina.keystore to android/app/"
+            echo "CRITICAL ERROR: No keystore found!"
+            echo "Please upload 'lumina.keystore' to 'android/app/' folder in the AI Studio editor."
             exit 1
           fi
+
+          # VALIDATION: Check file size and integrity
+          SIZE=$(stat -c%s "$TARGET")
+          echo "File size: $SIZE bytes"
+          if [ "$SIZE" -lt 500 ]; then
+            echo "ERROR: Keystore file is too small ($SIZE bytes). It is likely corrupted or an LFS pointer that failed to pull."
+            echo "Content of file (first 50 bytes):"
+            head -c 50 "$TARGET" | hexdump -C || true
+            exit 1
+          fi
+
+          # INTEGRITY: Try to list aliases to verify password and format
+          echo "Verifying keystore integrity with keytool..."
+          if ! keytool -list -v -keystore "$TARGET" -storepass "${{ secrets.KEYSTORE_PASSWORD || 'Asena1numara!' }}" > /dev/null 2>&1; then
+            echo "ERROR: Keystore file is invalid or password incorrect."
+            echo "If you uploaded the file from your phone, it might be corrupted."
+            exit 1
+          fi
+          echo "Keystore validation PASSED."
 
       - name: Re-encode and validate Android PNGs
         run: |
