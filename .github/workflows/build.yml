@@ -65,12 +65,15 @@ jobs:
       - name: Decode Keystore
         run: |
           mkdir -p android/app
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          if [ -f "android/app/lumina.keystore" ]; then
+            echo "Keystore file already exists in repository, skipping decode."
+          elif [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/lumina.keystore
-            echo "Keystore decoded successfully."
+            echo "Keystore decoded from KEYSTORE_BASE64 secret."
             ls -l android/app/lumina.keystore
           else
-            echo "Error: KEYSTORE_BASE64 secret is empty. The build will fail."
+            echo "ERROR: No keystore found in repository and KEYSTORE_BASE64 secret is empty."
+            echo "Please add KEYSTORE_BASE64 to GitHub Actions Secrets or upload lumina.keystore to android/app/"
             exit 1
           fi
 
